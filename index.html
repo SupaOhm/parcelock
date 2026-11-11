@@ -1,0 +1,3067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParceLock MVP Prototype</title>
+<style>
+:root{
+  --bg:#f4f5f7; --card:#fff; --ink:#151a23; --muted:#5e6675; --line:#e3e6ec;
+  --pri:#0f766e; --pri-2:#14b8a6; --pri-bg:#e6f4f2;
+  --amber:#b45309; --amber-bg:#fef3c7; --red:#b91c1c; --red-bg:#fde8e8; --green:#15803d; --green-bg:#e3f5e8;
+  --door:#0b1220; --door-2:#131c2e; --door-line:#25324a;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+button{font:inherit;cursor:pointer}
+input,select{font:inherit}
+a{color:var(--pri)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.hide{display:none!important}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
+.top-in{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:10px 20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;color:var(--ink);text-decoration:none}
+.brand .logo{width:28px;height:28px;border-radius:8px;background:var(--pri);display:grid;place-items:center}
+.tag{font-size:11px;font-weight:600;color:var(--pri);background:var(--pri-bg);padding:2px 8px;border-radius:99px}
+.nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.nav a{padding:7px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--bg);color:var(--ink)}
+.nav a.on{background:var(--ink);color:#fff}
+main{max-width:1280px;margin:0 auto;padding:20px}
+
+/* generic */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;border-radius:9px;font-weight:600}
+.btn:hover{border-color:#c9ced8}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{background:#0d655e}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:7px}
+.btn.lg{padding:14px 20px;font-size:16px;border-radius:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px dashed #9aa3b2;background:#fff;color:var(--ink);border-radius:99px;padding:4px 10px;font-size:12px;margin:0 6px 6px 0}
+.chip:hover{border-style:solid;border-color:var(--pri);color:var(--pri)}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.badge.cod{background:var(--amber-bg);color:var(--amber)}
+.badge.ok{background:var(--green-bg);color:var(--green)}
+.badge.bad{background:var(--red-bg);color:var(--red)}
+.badge.pri{background:var(--pri-bg);color:var(--pri)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#fff}
+.field input:focus,.field select:focus{outline:2px solid var(--pri-2);border-color:transparent}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1}
+h1,h2,h3{margin:0}
+.demo-note{font-size:11px;color:var(--muted);border-top:1px dashed var(--line);margin-top:12px;padding-top:10px}
+.demo-note b{color:#7c4a03;background:#fff4d6;padding:0 5px;border-radius:4px;font-weight:600}
+
+/* overview */
+.hero{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;align-items:stretch}
+.hero h1{font-size:28px;line-height:1.2;margin-bottom:8px}
+.roles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+.role{display:block;text-decoration:none;color:inherit}
+.role:hover .card{border-color:var(--pri)}
+.role h3{font-size:15px;margin:6px 0 4px}
+.ico{width:34px;height:34px;border-radius:9px;background:var(--pri-bg);display:grid;place-items:center}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+.flow ol{margin:6px 0 0;padding-left:18px}
+.flow li{margin-bottom:4px}
+.scope{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.scope ul{margin:6px 0 0;padding-left:18px}
+
+/* phone */
+.phone{width:380px;max-width:100%;height:760px;background:#fff;border:10px solid #10141c;border-radius:42px;overflow:hidden;display:flex;flex-direction:column;margin:0 auto;box-shadow:0 20px 50px -20px rgba(0,0,0,.35)}
+.ph-top{padding:14px 16px 10px;background:var(--pri);color:#fff}
+.ph-top .row{justify-content:space-between}
+.ph-top select{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:4px 6px;font-weight:600}
+.ph-top select option{color:#000}
+.ph-body{flex:1;overflow:auto;padding:14px 14px 18px;background:var(--bg)}
+.ph-tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:#fff}
+.ph-tabs button{border:0;background:none;padding:9px 0 11px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+.ph-tabs button.on{color:var(--pri);font-weight:700}
+.ph-sec{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px}
+.pcard .t{font-weight:600}
+.ready{background:linear-gradient(135deg,var(--pri),#0d9488);color:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px}
+.ready .btn{background:#fff;color:var(--pri);border:0}
+.qrbox{background:#fff;border-radius:14px;padding:16px;text-align:center;border:1px solid var(--line)}
+.qrbox svg{width:210px;height:210px}
+.code{font-size:30px;letter-spacing:.12em;font-weight:700}
+.wallet-bal{font-size:32px;font-weight:800}
+.notif{font-size:12px;padding:8px 10px;border-left:3px solid var(--pri-2);background:#fff;border-radius:0 8px 8px 0;margin-bottom:6px}
+.notif.warn{border-color:var(--amber)}
+.notif.bad{border-color:var(--red)}
+.msg{padding:9px 11px;border-radius:9px;font-size:13px;margin-bottom:10px}
+.msg.ok{background:var(--green-bg);color:var(--green)}
+.msg.bad{background:var(--red-bg);color:var(--red)}
+.msg.warn{background:var(--amber-bg);color:var(--amber)}
+.switch{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;margin-bottom:12px}
+
+/* door */
+.door{background:var(--door);color:#e7ecf5;border-radius:18px;padding:0;overflow:hidden;border:1px solid #000;box-shadow:0 20px 50px -20px rgba(0,0,0,.45)}
+.door-bar{display:flex;align-items:center;gap:10px;padding:12px 18px;background:#070c16;border-bottom:1px solid var(--door-line);font-size:13px}
+.lock{display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:3px 10px;border-radius:99px}
+.lock.locked{background:#2a1316;color:#fca5a5}
+.lock.open{background:#0d2a22;color:#6ee7b7}
+.door-grid{display:grid;grid-template-columns:1.35fr 1fr;min-height:470px}
+.door-main{padding:22px;border-right:1px solid var(--door-line)}
+.door-side{padding:18px;background:var(--door-2)}
+.door h2{font-size:22px;margin-bottom:6px}
+.door .muted{color:#94a0b8}
+.door .field label{color:#94a0b8}
+.door .field input{background:#0f1729;border-color:var(--door-line);color:#fff}
+.door .btn{background:#1b2740;border-color:var(--door-line);color:#e7ecf5}
+.door .btn:hover{border-color:#3b4c6e}
+.door .btn.pri{background:var(--pri-2);border-color:var(--pri-2);color:#04201d}
+.door .btn.danger{background:#dc2626;border-color:#dc2626;color:#fff}
+.door .chip{background:transparent;color:#cbd5e1;border-color:#4b5b7a}
+.door .chip:hover{color:#5eead4;border-color:#5eead4}
+.door .demo-note{border-color:var(--door-line);color:#8090ab}
+.door .demo-note b{background:#3a2a0a;color:#fcd38d}
+.big-choice{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+.big-choice button{background:#131d31;border:1px solid var(--door-line);color:#fff;border-radius:16px;padding:26px 18px;text-align:left}
+.big-choice button:hover{border-color:var(--pri-2)}
+.big-choice b{display:block;font-size:18px;margin:8px 0 4px}
+.steps{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.steps span{font-size:11px;padding:3px 9px;border-radius:99px;background:#16213a;color:#8090ab;font-weight:600}
+.steps span.on{background:var(--pri-2);color:#04201d}
+.steps span.done{background:#0d2a22;color:#6ee7b7}
+.bigbay{font-size:84px;font-weight:800;line-height:1;color:#5eead4;text-shadow:0 0 30px rgba(45,212,191,.55)}
+.dmsg{border-radius:12px;padding:12px 14px;margin:12px 0;font-size:14px}
+.dmsg.bad{background:#2a1316;color:#fecaca;border:1px solid #7f1d1d}
+.dmsg.ok{background:#0d2a22;color:#a7f3d0;border:1px solid #065f46}
+.dmsg.warn{background:#2c2108;color:#fde68a;border:1px solid #78350f}
+.ditem{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--door-line);border-radius:11px;margin-bottom:8px;background:#0f1729}
+.ditem .bl{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:20px;font-weight:800;background:#16213a;color:#64748b}
+.ditem .bl.on{background:var(--pri-2);color:#04201d;box-shadow:0 0 18px rgba(45,212,191,.6)}
+.ditem.done{opacity:.55}
+.link{background:none;border:0;color:#fbbf24;font-size:12px;text-decoration:underline;padding:0}
+.bays{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bay{border:1px solid var(--door-line);border-radius:12px;padding:10px 12px;background:#0f1729;position:relative;overflow:hidden}
+.bay .led{height:6px;border-radius:99px;background:#1e293b;margin-bottom:9px}
+.bay.on{border-color:var(--pri-2)}
+.bay.on .led{background:var(--pri-2);box-shadow:0 0 14px 2px rgba(45,212,191,.75);animation:pulse 1.2s ease-in-out infinite}
+.bay.alarm{border-color:#ef4444}
+.bay.alarm .led{background:#ef4444;box-shadow:0 0 14px 2px rgba(239,68,68,.75);animation:pulse .6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.45}}
+.bay .nm{font-size:22px;font-weight:800}
+.bay .ld{font-size:12px;color:#94a0b8}
+.pod{background:#fff;color:var(--ink);border-radius:12px;padding:14px 16px;margin-top:8px}
+.pod table{width:100%;border-collapse:collapse;font-size:12px}
+.pod td,.pod th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+
+/* office */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi .n{font-size:26px;font-weight:800}
+.kpi .l{font-size:12px;color:var(--muted)}
+.ogrid{display:grid;grid-template-columns:1fr 1.6fr;gap:16px;margin-bottom:16px}
+.alert{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.alert.info{border-left-color:var(--amber)}
+.alert.res{opacity:.55;border-left-color:var(--line)}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.obays{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.obay{border:1px solid var(--line);border-radius:10px;padding:10px}
+.obay .nm{font-weight:800;font-size:18px}
+.scroll{max-height:340px;overflow:auto}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.sec-h h3{font-size:15px}
+.mini-alerts{margin-top:14px}
+
+/* demo split */
+.split{display:grid;grid-template-columns:400px 1fr;gap:22px;align-items:start}
+.split-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+
+@media (max-width:1000px){
+  .hero,.flow,.scope,.ogrid,.split{grid-template-columns:1fr}
+  .roles{grid-template-columns:1fr 1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .door-grid{grid-template-columns:1fr}
+  .door-main{border-right:0;border-bottom:1px solid var(--door-line)}
+  .obays{grid-template-columns:1fr 1fr}
+}
+@media (max-width:520px){
+  main{padding:0}
+  .phone{border:0;border-radius:0;height:auto;min-height:calc(100vh - 140px);width:100%;box-shadow:none;overflow:visible}
+  .ph-body{overflow:visible;padding-bottom:80px}
+  .ph-tabs{position:fixed;left:0;right:0;bottom:0;z-index:30}
+  .roles{grid-template-columns:1fr}
+  .big-choice{grid-template-columns:1fr}
+  .top-in{padding:8px 12px}
+  .view-pad{padding:14px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="#overview"><span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>ParceLock <span class="tag">MVP prototype</span></a>
+  <nav class="nav" id="nav">
+    <a href="#overview" data-v="overview">Overview</a>
+    <a href="#demo" data-v="demo">Side-by-side demo</a>
+    <a href="#resident" data-v="resident">Resident app</a>
+    <a href="#door" data-v="door">Door panel</a>
+    <a href="#office" data-v="office">Juristic office</a>
+  </nav>
+</div></header>
+<main id="app"></main>
+<div id="toast" class="toast hide"></div>
+
+<script>
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+(function(){
+'use strict';
+const KEY='parcelock-mvp-v1';
+const BAYS=['A','B','C','D'];
+const DAY=86400000;
+const FREE_DAYS=3, FEE_PER_DAY=10;
+const CARRIERS=['Kerry Express','Flash Express','J&T Express','Shopee Xpress','Thailand Post','Lazada Express'];
+const SIZES={'Envelope':[100,300],'Small box':[300,900],'Medium box':[900,2000],'Large box':[2000,5000]};
+const ROOMS=['0815','1204','1240','2107'];
+
+/* ---------- state ---------- */
+let mem=null;
+function rnd(a,b){return Math.round(a+Math.random()*(b-a))}
+function seed(){
+  const now=Date.now();
+  const s={v:1,seq:1,dayOffset:0,wallets:{'0815':1000,'1204':500,'1240':0,'2107':200},
+    parcels:[],passes:{},alerts:[],log:[],notifs:[],tx:[],door:{mode:'idle'},pods:[]};
+  const P=(tracking,carrier,room,size,weight,cod,stored,bay,ago)=>{
+    const p={id:'p'+(s.seq++),tracking,carrier,room,size,weight,cod:cod||0,codPaid:false,
+      status:stored?'stored':'awaiting',bay:stored?bay:null,registeredAt:now-(ago||0)-3*3600000,
+      storedAt:stored?now-ago:null,collectedAt:null};
+    s.parcels.push(p);return p;};
+  P('SPXTH02910376','Shopee Xpress','0815','Medium box',2400,0,true,'C',2*DAY);
+  P('TH552001734TH','Thailand Post','2107','Envelope',180,0,true,'A',4*DAY);
+  P('KEX661004287','Kerry Express','1204','Medium box',1250,0,false);
+  P('SPXTH04421958','Shopee Xpress','1204','Small box',640,359,false);
+  P('FLA881234512','Flash Express','1240','Medium box',1230,0,false);
+  P('JNT770019283','J&T Express','1240','Small box',890,590,false);
+  P('LEX009912377','Lazada Express','0815','Large box',3100,1290,false);
+  s.passes['0815']={code:'418205',createdAt:now-2*DAY};
+  s.passes['2107']={code:'730964',createdAt:now-4*DAY};
+  s.tx.push({t:now-5*DAY,room:'1204',amount:500,desc:'Top-up'},{t:now-5*DAY,room:'0815',amount:1000,desc:'Top-up'},{t:now-6*DAY,room:'2107',amount:200,desc:'Top-up'});
+  s.log.push({t:now,actor:'system',event:'demo_loaded',detail:'Demo data loaded'});
+  return s;
+}
+function load(){
+  try{const raw=localStorage.getItem(KEY);if(raw){const s=JSON.parse(raw);if(s&&s.v===1)return s;}}catch(e){}
+  return mem||seed();
+}
+let S=load();
+function save(){mem=S;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+save();
+window.addEventListener('storage',e=>{if(e.key===KEY){S=load();render();}});
+
+/* ---------- ui state (per tab) ---------- */
+const UI={view:'overview',room:'1204',rtab:'home',regMsg:null,walletMsg:null,dErr:null,dInfo:null,confirmReset:false};
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=()=>Date.now()+S.dayOffset*DAY;
+const fmtT=t=>new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const fmtDT=t=>{const d=new Date(t);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});};
+const g=w=>(w>=1000?(w/1000).toFixed(2).replace(/\.?0+$/,'')+' kg':w+' g');
+const baht=n=>'฿'+Number(n).toLocaleString('en-US');
+const last4=t=>esc(String(t).slice(0,-4))+'<b>'+esc(String(t).slice(-4))+'</b>';
+const P=id=>S.parcels.find(p=>p.id===id);
+const tol=w=>Math.max(30,Math.round(w*0.05));
+function log(actor,event,detail){S.log.push({t:Date.now(),actor,event,detail});}
+function notify(room,msg,kind){S.notifs.push({t:Date.now(),room,msg,kind:kind||''});}
+function alertOffice(type,msg,extra){const a=Object.assign({id:'a'+(S.seq++),t:Date.now(),type,msg,resolved:false},extra||{});S.alerts.push(a);return a;}
+function toast(m){const el=$('#toast');el.textContent=m;el.classList.remove('hide');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.add('hide'),2600);}
+function storedIn(bay){return S.parcels.filter(p=>p.status==='stored'&&p.bay===bay);}
+function storageDays(p){return p.storedAt?Math.floor((now()-p.storedAt)/DAY):0;}
+function overtimeFee(p){return Math.max(0,storageDays(p)-FREE_DAYS)*FEE_PER_DAY;}
+function pendingCod(room){return S.parcels.filter(p=>p.room===room&&p.status==='awaiting'&&p.cod>0).reduce((a,p)=>a+p.cod,0);}
+function newCode(){let c;const used=Object.values(S.passes).map(p=>p.code);do{c=String(rnd(100000,999999));}while(used.includes(c));return c;}
+function ensurePass(room){if(!S.passes[room])S.passes[room]={code:newCode(),createdAt:Date.now()};}
+function roomByCode(code){return Object.keys(S.passes).find(r=>S.passes[r].code===code);}
+
+function assignBay(w,extra){
+  // fewest parcels; avoid putting similar weights in the same bay so a wrong pickup is detectable
+  let best=null,bestScore=1e9;
+  for(const b of BAYS){
+    const items=storedIn(b).map(p=>p.weight).concat(extra.filter(x=>x.bay===b).map(x=>x.w));
+    const similar=items.some(x=>Math.abs(x-w)<=Math.max(tol(x),tol(w))*3);
+    const score=items.length+(similar?10:0);
+    if(score<bestScore){best=b;bestScore=score;}
+  }
+  return best;
+}
+
+function qrSvg(text){
+  try{const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:6,margin:2,scalable:true});}
+  catch(e){return '<div class="muted">QR unavailable</div>';}
+}
+
+/* ---------- icons ---------- */
+const I={
+  box:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+  door:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="15" cy="12" r="1"/></svg>',
+  office:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+  phone:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+  truck:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h13v10H1z"/><path d="M14 9h4l3 3v4h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  qr:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>',
+  split:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg>',
+  home:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+  plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+  wallet:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M16 13h2M3 10h18"/></svg>',
+};
+
+/* ================= RESIDENT ================= */
+function residentView(){
+  const room=UI.room;
+  const tabs=[['home','Home',I.home],['register','Register',I.plus],['pickup','Pickup QR',I.qr.replace(/26/g,'18')],['wallet','Wallet',I.wallet]];
+  let body='';
+  if(UI.rtab==='home')body=rHome(room);
+  else if(UI.rtab==='register')body=rRegister(room);
+  else if(UI.rtab==='pickup')body=rPickup(room);
+  else body=rWallet(room);
+  return `<div class="phone">
+    <div class="ph-top"><div class="row"><b>ParceLock</b>
+      <select data-change="room" title="Demo only: switch which resident you are">${ROOMS.map(r=>`<option value="${r}" ${r===room?'selected':''}>Room ${r}</option>`).join('')}</select></div>
+      <div class="small" style="opacity:.85;margin-top:4px">Demo resident · no login</div></div>
+    <div class="ph-body">${body}</div>
+    <div class="ph-tabs">${tabs.map(([k,l,ic])=>`<button data-act="rtab" data-k="${k}" class="${UI.rtab===k?'on':''}">${ic}${l}</button>`).join('')}</div>
+  </div>`;
+}
+function rHome(room){
+  const mine=S.parcels.filter(p=>p.room===room);
+  const ready=mine.filter(p=>p.status==='stored');
+  const waiting=mine.filter(p=>p.status==='awaiting');
+  const done=mine.filter(p=>p.status==='collected').slice(-3).reverse();
+  const bal=S.wallets[room]||0, pc=pendingCod(room);
+  const notifs=S.notifs.filter(n=>n.room===room).slice(-5).reverse();
+  let h='';
+  if(ready.length)h+=`<div class="ready"><div class="grow"><div style="font-size:12px;opacity:.85">Ready for pickup</div><div style="font-size:20px;font-weight:800">${ready.length} parcel${ready.length>1?'s':''}</div></div><button class="btn sm" data-act="rtab" data-k="pickup">Show QR</button></div>`;
+  else h+=`<div class="pcard muted">No parcels waiting in the parcel room.</div>`;
+  if(pc>bal)h+=`<div class="msg warn" style="margin-top:10px">COD due on delivery ${baht(pc)}, wallet ${baht(bal)}. Top up or the courier can't drop it off. <button class="btn sm" data-act="rtab" data-k="wallet">Top up</button></div>`;
+  if(ready.length){h+=`<div class="ph-sec">In the parcel room</div>`+ready.map(p=>{const f=overtimeFee(p);return `<div class="pcard"><div class="row"><span class="t grow">${esc(p.carrier)}</span><span class="badge pri">Bay ${p.bay}</span></div>
+    <div class="small muted mono">${last4(p.tracking)}</div><div class="small muted">${esc(p.size)} · ${g(p.weight)} · stored ${fmtDT(p.storedAt)}</div>
+    <div class="row" style="margin-top:4px;flex-wrap:wrap">${p.cod?`<span class="badge ok">COD ${baht(p.cod)} paid</span>`:''}${f?`<span class="badge bad">Overtime fee ${baht(f)}</span>`:`<span class="badge">Free storage: ${Math.max(0,FREE_DAYS-storageDays(p))} day(s) left</span>`}</div></div>`;}).join('');}
+  h+=`<div class="ph-sec">Registered, not delivered yet</div>`;
+  h+=waiting.length?waiting.map(p=>`<div class="pcard"><div class="row"><span class="t grow">${esc(p.carrier)}</span>${p.cod?`<span class="badge cod">COD ${baht(p.cod)}</span>`:''}</div><div class="small muted mono">${last4(p.tracking)}</div></div>`).join(''):`<div class="small muted">Nothing registered. Add your tracking code after you order.</div>`;
+  if(done.length)h+=`<div class="ph-sec">Recently collected</div>`+done.map(p=>`<div class="pcard small"><span class="t">${esc(p.carrier)}</span> <span class="mono muted">${last4(p.tracking)}</span><div class="muted">Collected ${fmtDT(p.collectedAt)}</div></div>`).join('');
+  if(notifs.length)h+=`<div class="ph-sec">Notifications</div>`+notifs.map(n=>`<div class="notif ${n.kind}"><div class="muted" style="font-size:11px">${fmtT(n.t)}</div>${esc(n.msg)}</div>`).join('');
+  return h;
+}
+function rRegister(room){
+  const m=UI.regMsg;
+  return `<h3 style="font-size:17px">Register a parcel</h3>
+  <p class="small muted" style="margin:4px 0 12px">Add the tracking code after you order. Couriers can only open the parcel room with a registered code.</p>
+  ${m?`<div class="msg ${m.k}">${m.html}</div>`:''}
+  <form data-form="register">
+    <div class="field"><label>Tracking code</label><input id="r-track" class="mono" placeholder="e.g. KEX661004287" autocomplete="off" required></div>
+    <div class="field"><label>Carrier</label><select id="r-carrier">${CARRIERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Package type</label><select id="r-size">${Object.keys(SIZES).map(c=>`<option ${c==='Small box'?'selected':''}>${c}</option>`).join('')}</select></div>
+    <label class="switch"><input type="checkbox" id="r-cod" data-change="codtoggle"> Cash on delivery (COD)</label>
+    <div class="field hide" id="r-cod-wrap"><label>COD amount (฿), paid from your ParceLock wallet</label><input id="r-codamt" type="number" min="1" step="1" placeholder="e.g. 359"></div>
+    <button class="btn pri" style="width:100%">Register parcel</button>
+  </form>
+  <div class="demo-note"><b>Demo</b> The weight is unknown to you. The door scale records it when the courier arrives.</div>`;
+}
+function rPickup(room){
+  const pass=S.passes[room];
+  const ready=S.parcels.filter(p=>p.room===room&&p.status==='stored');
+  if(!pass||!ready.length)return `<div class="pcard muted" style="text-align:center;padding:30px 14px">No pickup QR yet.<br>You'll get one as soon as a parcel is placed in the parcel room.</div>`;
+  const bays=[...new Set(ready.map(p=>p.bay))].sort();
+  return `<div class="qrbox">${qrSvg('PARCELOCK:'+pass.code)}
+    <div class="code mono">${pass.code.slice(0,3)} ${pass.code.slice(3)}</div>
+    <div class="small muted">One-time code · opens the door for ${ready.length>1?'all '+ready.length+' of your parcels':'your parcel'}</div></div>
+    <div class="ph-sec">Your parcels</div>
+    ${ready.map(p=>`<div class="pcard row"><span class="badge pri">Bay ${p.bay}</span><span class="grow small">${esc(p.carrier)} · <span class="mono">${last4(p.tracking)}</span></span><span class="small muted">${g(p.weight)}</span></div>`).join('')}
+    <p class="small muted">Show this QR at the ParceLock door. ${bays.length>1?'Bays '+bays.join(' and '):'Bay '+bays[0]} will light up.</p>
+    <button class="btn" style="width:100%" data-act="phoneScan">Hold QR to door scanner</button>
+    <div class="demo-note"><b>Demo</b> The button stands in for the door camera reading your QR. Or type the code on the door panel.</div>`;
+}
+function rWallet(room){
+  const bal=S.wallets[room]||0, pc=pendingCod(room);
+  const tx=S.tx.filter(t=>t.room===room).slice(-8).reverse();
+  const m=UI.walletMsg;
+  return `<div class="pcard"><div class="small muted">ParceLock wallet · Room ${room}</div><div class="wallet-bal">${baht(bal)}</div>
+    <div class="small ${pc>bal?'':'muted'}" style="${pc>bal?'color:var(--amber);font-weight:600':''}">COD reserved for registered parcels: ${baht(pc)}</div></div>
+    ${m?`<div class="msg ok">${esc(m)}</div>`:''}
+    <div class="ph-sec">Top up</div>
+    <div class="row" style="flex-wrap:wrap;gap:6px">${[100,300,500,1000].map(a=>`<button class="btn" data-act="topup" data-a="${a}">+ ${baht(a)}</button>`).join('')}</div>
+    <p class="small muted">COD parcels are paid to the courier from this wallet, so you don't need to come down when they arrive.</p>
+    <div class="ph-sec">History</div>
+    ${tx.length?tx.map(t=>`<div class="pcard row small"><span class="grow">${esc(t.desc)}<div class="muted">${fmtDT(t.t)}</div></span><b style="color:${t.amount<0?'var(--red)':'var(--green)'}">${t.amount<0?'−':'+'}${baht(Math.abs(t.amount))}</b></div>`).join(''):'<div class="small muted">No transactions.</div>'}
+    <div class="demo-note"><b>Demo</b> Top-ups are simulated. No real payment is taken.</div>`;
+}
+
+/* ================= DOOR ================= */
+function doorView(){
+  const d=S.door;
+  const locked=!(d.mode==='courier'&&d.unlocked)&&!(d.mode==='pickup'&&d.step==='collect');
+  let main='';
+  if(S.door.lockAlert){
+    const a=S.alerts.find(x=>x.id===S.door.lockAlert);
+    main=`<h2 style="color:#fca5a5">Room locked</h2><div class="dmsg bad">${esc(a?a.msg:'Weight mismatch')}</div>
+      <p class="muted">The juristic office has been notified and must check the room before the door opens again.</p>
+      <div class="demo-note"><b>Demo</b> Open the <a href="#office" style="color:#5eead4">Juristic office</a> view and resolve the alert.</div>`;
+  }
+  else if(d.mode==='idle')main=dIdle();
+  else if(d.mode==='courier')main=dCourier();
+  else if(d.mode==='pickup')main=dPickup();
+  const lit=litBays();
+  return `<div class="door">
+    <div class="door-bar">${I.door}<b>ParceLock door · Parcel room 1</b><span class="grow"></span>
+      <span class="lock ${S.door.lockAlert||locked?'locked':'open'}">${S.door.lockAlert?'LOCKED · ALERT':locked?'LOCKED':'UNLOCKED'}</span></div>
+    <div class="door-grid"><div class="door-main">${main}</div>
+    <div class="door-side"><div class="row" style="justify-content:space-between;margin-bottom:10px"><b>Bays</b><span class="small muted">LED guide · bay scales</span></div>
+      <div class="bays">${BAYS.map(b=>{const it=storedIn(b);const w=it.reduce((a,p)=>a+p.weight,0);
+        return `<div class="bay ${lit.alarm.includes(b)?'alarm':lit.on.includes(b)?'on':''}"><div class="led"></div><div class="row"><span class="nm grow">${b}</span><span class="small muted">${it.length} item${it.length===1?'':'s'}</span></div><div class="ld mono">scale ${g(w)}</div></div>`;}).join('')}</div>
+      ${entranceScale()}
+    </div></div></div>`;
+}
+function litBays(){
+  const d=S.door,on=[],alarm=[];
+  if(d.mode==='courier'&&d.step==='place'&&d.current)on.push(d.current.bay);
+  if(d.mode==='pickup'&&d.step==='collect'){
+    if(d.mismatch){alarm.push(d.mismatch.bay);}
+    else d.items.filter(id=>!d.taken.includes(id)).forEach(id=>{const p=P(id);if(p)on.push(p.bay);});
+  }
+  if(S.door.lockAlert){const a=S.alerts.find(x=>x.id===S.door.lockAlert);if(a&&a.bay)alarm.push(a.bay);}
+  return {on,alarm};
+}
+function entranceScale(){
+  const d=S.door;let w=null;
+  if(d.mode==='courier'&&d.current)w=d.current.w;
+  return `<div class="bay" style="margin-top:10px"><div class="row"><span class="grow"><b>Entrance scale</b></span><span class="mono">${w?g(w):'0 g'}</span></div><div class="ld">Courier weighs each parcel here before entering</div></div>`;
+}
+function dIdle(){
+  return `<h2>Welcome</h2><p class="muted">Couriers scan a registered parcel. Residents show their pickup QR.</p>
+    <div class="big-choice">
+      <button data-act="dStart" data-m="courier">${I.truck}<b>Courier drop-off</b><span class="muted small">Weigh, scan, place, get COD payout</span></button>
+      <button data-act="dStart" data-m="pickup">${I.qr}<b>Resident pickup</b><span class="muted small">Scan your one-time QR</span></button>
+    </div>${UI.dInfo?`<div class="dmsg ok">${UI.dInfo}</div>`:''}`;
+}
+function stepper(list,cur){const i=list.indexOf(cur);return `<div class="steps">${list.map((s,k)=>`<span class="${k<i?'done':k===i?'on':''}">${k+1}. ${s}</span>`).join('')}</div>`;}
+function dCourier(){
+  const d=S.door;
+  const stepName={scan:'Weigh & scan',place:'Place',next:'Place',cod:'COD payout',pod:'Proof of delivery'}[d.step];
+  let h=stepper(['Weigh & scan','Place','COD payout','Proof of delivery'],stepName);
+  const placed=d.items.map(x=>P(x.id)).filter(Boolean);
+  if(d.step==='scan'){
+    const waiting=S.parcels.filter(p=>p.status==='awaiting'&&!d.items.some(x=>x.id===p.id));
+    h+=`<h2>${placed.length?'Next parcel':'Weigh and scan the parcel'}</h2><p class="muted">Put the parcel on the entrance scale, then scan its label.</p>
+      ${UI.dErr?`<div class="dmsg bad">${UI.dErr}</div>`:''}
+      <form data-form="cscan"><div class="row" style="align-items:flex-end">
+        <div class="field grow"><label>Scanned tracking code</label><input id="c-track" class="mono" autocomplete="off" placeholder="scan label" required></div>
+        <div class="field" style="width:130px"><label>Entrance scale (g)</label><input id="c-w" type="number" min="1" placeholder="grams" required></div>
+      </div><div class="row"><button class="btn pri">Scan &amp; unlock</button>${placed.length?`<button type="button" class="btn" data-act="cFinish">Done, ${placed.length} placed</button>`:`<button type="button" class="btn ghost" data-act="dCancel">Cancel</button>`}</div></form>
+      <div class="demo-note"><b>Demo</b> Tap a label to simulate scanning it and weighing the parcel:<div style="margin-top:8px">
+        ${waiting.map(p=>`<button class="chip mono" data-act="cFill" data-id="${p.id}">${esc(p.tracking)} · ${p.room}${p.cod?' · COD':''}</button>`).join('')}
+        <button class="chip" data-act="cFillUnreg">Unregistered parcel</button></div></div>`;
+  }
+  else if(d.step==='place'){
+    const p=P(d.current.id);
+    h+=`<div class="row" style="gap:22px;align-items:center"><div class="bigbay">${d.current.bay}</div><div><h2>Place it in Bay ${d.current.bay}</h2>
+      <div class="muted">Follow the lit LED strip. Room ${esc(p.room)} · <span class="mono">${last4(p.tracking)}</span> · ${g(d.current.w)}${p.cod?` · COD ${baht(p.cod)}`:''}</div></div></div>
+      <p class="muted" style="margin-top:18px">The bay scale confirms the parcel once it's on the shelf.</p>
+      <div class="row"><button class="btn pri lg" data-act="cPlace">Parcel placed on Bay ${d.current.bay}</button></div>
+      <div class="demo-note"><b>Demo</b> <button class="link" data-act="cWrongBay">Place it in the wrong bay</button> to see the weight check lock the room.</div>`;
+  }
+  else if(d.step==='next'){
+    const last=placed[placed.length-1];
+    h+=`<div class="dmsg ok">Bay ${esc(last.bay)} confirmed +${g(last.weight)}. Room ${esc(last.room)} has been notified.</div>
+      <h2>Anything else to drop off?</h2><p class="muted">One courier at a time, with as many parcels as you need in one visit.</p>
+      ${placedList(placed)}
+      <div class="row" style="margin-top:12px"><button class="btn" data-act="cAnother">Scan another parcel</button><button class="btn pri" data-act="cFinish">Finish &amp; lock door</button></div>`;
+  }
+  else if(d.step==='cod'){
+    const cods=placed.filter(p=>p.cod>0);const tot=cods.reduce((a,p)=>a+p.cod,0);
+    h+=`<h2>COD payout ${baht(tot)}</h2><p class="muted">Already paid by the residents from their ParceLock wallets. Scan your payout QR at the payment unit to receive it.</p>
+      ${cods.map(p=>`<div class="ditem"><div class="bl">${p.bay}</div><div class="grow">Room ${esc(p.room)} · <span class="mono">${last4(p.tracking)}</span></div><b>${baht(p.cod)}</b></div>`).join('')}
+      <button class="btn pri lg" data-act="cPayout">Scan payout QR</button>
+      <div class="demo-note"><b>Demo</b> No real money moves. The wallet balances are simulated.</div>`;
+  }
+  else if(d.step==='pod'){
+    const pod=S.pods[S.pods.length-1];
+    h+=`<h2>Delivery complete</h2><p class="muted">Door locked. This proof of delivery has been sent to the carrier app.</p>
+      <div class="pod"><div class="row"><b class="grow">Proof of Delivery</b><span class="mono small">${esc(pod.id)}</span></div>
+      <div class="small muted">${fmtDT(pod.t)} · ParceLock parcel room 1 · ${esc(pod.courier)}</div>
+      <table><tr><th>Tracking</th><th>Room</th><th>Bay</th><th>Weight</th><th>COD</th></tr>
+      ${pod.items.map(i=>`<tr><td class="mono">${esc(i.tracking)}</td><td>${esc(i.room)}</td><td>${i.bay}</td><td>${g(i.weight)}</td><td>${i.cod?baht(i.cod)+' paid':'-'}</td></tr>`).join('')}</table>
+      ${pod.cod?`<div style="margin-top:8px"><b>COD paid to courier: ${baht(pod.cod)}</b></div>`:''}</div>
+      <button class="btn pri" style="margin-top:14px" data-act="dDone">Done</button>`;
+  }
+  return h;
+}
+function placedList(items){return items.map(p=>`<div class="ditem"><div class="bl on">${p.bay}</div><div class="grow">Room ${esc(p.room)} · <span class="mono">${last4(p.tracking)}</span><div class="small muted">${g(p.weight)}${p.cod?` · COD ${baht(p.cod)}`:''}</div></div><span class="badge ok">placed</span></div>`).join('');}
+
+function dPickup(){
+  const d=S.door;
+  let h=stepper(['Scan QR','Collect','Done'],d.step==='scan'?'Scan QR':d.step==='collect'?'Collect':'Done');
+  if(d.step==='scan'){
+    const passes=Object.keys(S.passes).filter(r=>S.parcels.some(p=>p.room===r&&p.status==='stored'));
+    h+=`<h2>Show your pickup QR</h2><p class="muted">Hold your phone up to the scanner, or type the 6-digit code.</p>
+      ${UI.dErr?`<div class="dmsg bad">${UI.dErr}</div>`:''}
+      <form data-form="pscan"><div class="row" style="align-items:flex-end"><div class="field grow"><label>Pickup code</label><input id="p-code" class="mono" inputmode="numeric" maxlength="7" placeholder="000 000" autocomplete="off" required></div></div>
+      <div class="row"><button class="btn pri">Unlock</button><button type="button" class="btn ghost" data-act="dCancel">Cancel</button></div></form>
+      <div class="demo-note"><b>Demo</b> Tap to simulate scanning a resident's QR:<div style="margin-top:8px">
+      ${passes.map(r=>`<button class="chip" data-act="pFill" data-r="${r}">Room ${r}'s QR</button>`).join('')||'<span>No active pickup QR codes. Drop off a parcel first.</span>'}
+      <button class="chip" data-act="pFillBad">Already used code</button></div></div>`;
+  }
+  else if(d.step==='collect'){
+    const items=d.items.map(P).filter(Boolean);
+    const left=items.filter(p=>!d.taken.includes(p.id));
+    h+=`<h2>Room ${esc(d.room)}: ${items.length} parcel${items.length>1?'s':''}</h2><p class="muted">Take your parcels from the lit bays. The bay scales check each one.</p>`;
+    if(d.mismatch){const m=d.mismatch;h+=`<div class="dmsg bad"><b>That's not your parcel.</b> Bay ${m.bay} lost ${g(m.grams)}, but we expected ${g(m.expected)} from Bay ${m.expBay}. Please put it back. The juristic office has been notified.</div>
+      <button class="btn danger" data-act="pReturn">I've put it back</button>`;}
+    h+=`<div style="margin-top:12px">${items.map(p=>{const t=d.taken.includes(p.id);return `<div class="ditem ${t?'done':''}"><div class="bl ${t?'':'on'}">${p.bay}</div>
+      <div class="grow">${esc(p.carrier)} · <span class="mono">${last4(p.tracking)}</span><div class="small muted">${esc(p.size)} · ${g(p.weight)}${p.cod?' · COD paid':''}${overtimeFee(p)?` · <span style="color:#fca5a5">overtime fee ${baht(overtimeFee(p))}</span>`:''}</div></div>
+      ${t?'<span class="badge ok">✓ weight matched</span>':`<div style="text-align:right"><button class="btn sm pri" data-act="pTake" data-id="${p.id}" ${d.mismatch?'disabled':''}>Take from Bay ${p.bay}</button><br><button class="link" data-act="pWrong" data-id="${p.id}" ${d.mismatch?'disabled':''}>Demo: take the wrong box</button></div>`}</div>`;}).join('')}</div>
+      <div class="row" style="margin-top:12px"><button class="btn pri" data-act="pFinish" ${left.length||d.mismatch?'disabled':''}>Finish &amp; lock door</button>
+      ${d.mismatch?'':!d.taken.length?`<button class="btn ghost" data-act="dCancel">Cancel</button>`:left.length?`<button class="btn ghost" data-act="pFinish" data-partial="1">Leave ${left.length} for later</button>`:''}</div>`;
+  }
+  return h;
+}
+
+/* ================= OFFICE ================= */
+function officeView(){
+  const stored=S.parcels.filter(p=>p.status==='stored');
+  const awaiting=S.parcels.filter(p=>p.status==='awaiting');
+  const collected=S.parcels.filter(p=>p.status==='collected');
+  const open=S.alerts.filter(a=>!a.resolved);
+  const fees=stored.reduce((a,p)=>a+overtimeFee(p),0);
+  const alerts=[...open.slice().reverse(),...S.alerts.filter(a=>a.resolved).slice(-5).reverse()];
+  const rows=[...stored,...awaiting,...collected.slice(-8).reverse()];
+  const lg=S.log.slice(-40).reverse();
+  return `<div class="view-pad">
+  <div class="sec-h"><div><h2 style="font-size:22px">Juristic office</h2><div class="muted small">The room runs itself. Staff only step in on alerts.</div></div>
+    <div class="row" style="flex-wrap:wrap">
+      <span class="small muted">Demo clock: ${S.dayOffset?`+${S.dayOffset} day(s)`:'today'}</span>
+      <button class="btn sm" data-act="dayPlus">Advance 1 day</button>
+      ${UI.confirmReset?`<span class="small">Reset all demo data?</span><button class="btn sm danger" data-act="reset">Yes, reset</button><button class="btn sm" data-act="resetNo">No</button>`:`<button class="btn sm" data-act="resetAsk">Reset demo data</button>`}
+    </div></div>
+  <div class="kpis">
+    <div class="card kpi"><div class="n">${stored.length}</div><div class="l">Parcels in the room</div></div>
+    <div class="card kpi"><div class="n">${awaiting.length}</div><div class="l">Registered, on the way</div></div>
+    <div class="card kpi"><div class="n">${collected.length}</div><div class="l">Collected</div></div>
+    <div class="card kpi"><div class="n" style="color:${open.length?'var(--red)':'inherit'}">${open.length}</div><div class="l">Open alerts</div></div>
+    <div class="card kpi"><div class="n">${baht(fees)}</div><div class="l">Overtime storage fees due</div></div>
+  </div>
+  <div class="ogrid">
+    <div class="card"><div class="sec-h"><h3>Alerts</h3></div>${alerts.length?alerts.map(alertCard).join(''):'<div class="muted small">No alerts. Nothing needs staff attention.</div>'}</div>
+    <div class="card"><div class="sec-h"><h3>Bay occupancy</h3><span class="small muted">from bay scales</span></div>
+      <div class="obays">${BAYS.map(b=>{const it=storedIn(b);return `<div class="obay"><div class="row"><span class="nm grow">Bay ${b}</span><span class="badge">${it.length}</span></div><div class="small muted mono">${g(it.reduce((a,p)=>a+p.weight,0))}</div><div class="small" style="margin-top:4px">${it.map(p=>'Rm '+esc(p.room)).join(', ')||'<span class="muted">empty</span>'}</div></div>`;}).join('')}</div>
+      <div class="sec-h" style="margin-top:16px"><h3>Parcels</h3></div>
+      <div class="scroll"><table class="t"><tr><th>Tracking</th><th>Room</th><th>Status</th><th>Bay</th><th>Weight</th><th>COD</th><th>Stored</th></tr>
+      ${rows.map(p=>`<tr><td class="mono">${last4(p.tracking)}<div class="small muted">${esc(p.carrier)}</div></td><td>${esc(p.room)}</td>
+        <td>${p.status==='stored'?'<span class="badge pri">In room</span>':p.status==='awaiting'?'<span class="badge">Registered</span>':'<span class="badge ok">Collected</span>'}</td>
+        <td>${p.bay||'-'}</td><td>${p.status==='awaiting'?'-':g(p.weight)}</td><td>${p.cod?(p.codPaid?`<span class="badge ok">${baht(p.cod)} paid</span>`:`<span class="badge cod">${baht(p.cod)}</span>`):'-'}</td>
+        <td class="small">${p.storedAt?fmtDT(p.storedAt):'-'}${p.status==='stored'?`<div class="${overtimeFee(p)?'':'muted'}" style="${overtimeFee(p)?'color:var(--red);font-weight:600':''}">${storageDays(p)}d${overtimeFee(p)?' · fee '+baht(overtimeFee(p)):''}</div>`:''}</td></tr>`).join('')}</table></div>
+    </div>
+  </div>
+  <div class="card"><div class="sec-h"><h3>Activity log</h3><div class="row"><button class="btn sm" data-act="csvCopy">Copy CSV</button><button class="btn sm" data-act="csvDl">Download CSV</button></div></div>
+    <div class="scroll"><table class="t"><tr><th>Time</th><th>Who</th><th>Event</th><th>Detail</th></tr>
+    ${lg.map(l=>`<tr><td class="mono small">${fmtT(l.t)}</td><td>${esc(l.actor)}</td><td class="mono small">${esc(l.event)}</td><td>${esc(l.detail)}</td></tr>`).join('')}</table></div>
+    <div class="small muted" style="margin-top:8px">Every event has a timestamp, so pickup and drop-off durations can be read straight from the export.</div></div>
+  </div>`;
+}
+function alertCard(a){
+  const info=a.type==='cod_balance'||a.type==='unregistered';
+  const label={dropoff_mismatch:'Drop-off weight mismatch',pickup_mismatch:'Pickup weight mismatch',cod_balance:'COD not covered',unregistered:'Unregistered parcel'}[a.type]||a.type;
+  return `<div class="alert ${a.resolved?'res':info?'info':''}"><div class="row"><b class="grow">${label}</b><span class="small muted mono">${fmtT(a.t)}</span></div>
+    <div class="small" style="margin:4px 0 8px">${esc(a.msg)}</div>
+    ${a.resolved?`<span class="small muted">Resolved ${fmtT(a.resolvedAt)}${a.note?' · '+esc(a.note):''}</span>`:
+      `<button class="btn sm ${a.type==='dropoff_mismatch'?'pri':''}" data-act="resolve" data-id="${a.id}">${a.type==='dropoff_mismatch'?'Checked: moved to the right bay, unlock door':'Mark as checked'}</button>`}</div>`;
+}
+
+/* ================= OVERVIEW / DEMO ================= */
+function overviewView(){
+  return `<div class="view-pad">
+  <div class="hero"><div class="card" style="padding:24px">
+    <span class="tag">TU109 · MVP prototype</span>
+    <h1 style="margin-top:10px">A self-service parcel room that does the juristic office's routine work.</h1>
+    <p class="muted" style="font-size:15px">Residents register tracking codes. Couriers unlock the room with a registered code, are guided to a bay and get COD paid out of the resident's wallet. Residents collect with a one-time QR, and bay scales check that each person takes only their own parcel.</p>
+    <div class="row" style="margin-top:14px;flex-wrap:wrap"><a class="btn pri" href="#demo" style="text-decoration:none">Open side-by-side demo</a><a class="btn" href="#office" style="text-decoration:none">Juristic office view</a></div></div>
+    <div class="card" style="padding:20px"><h3 style="font-size:15px">Try it in 2 minutes</h3><ol style="padding-left:18px;margin:8px 0 0">
+      <li>Open <b>Side-by-side demo</b>. You are Room 1204 on the phone.</li>
+      <li>On the door, choose <b>Courier drop-off</b> and tap 1204's two labels. One of them is COD.</li>
+      <li>Finish, get the COD payout and see the proof of delivery.</li>
+      <li>On the phone, open <b>Pickup QR</b> and tap <b>Hold QR to door scanner</b>.</li>
+      <li>Take one box correctly, then try <b>take the wrong box</b>.</li>
+      <li>Try 1240's COD label: its wallet is empty, so the door stays locked.</li></ol></div></div>
+  <div class="roles">
+    <a class="role" href="#demo"><div class="card"><div class="ico">${I.split}</div><h3>Side-by-side demo</h3><div class="small muted">Phone and door on one screen. Best for presenting.</div></div></a>
+    <a class="role" href="#resident"><div class="card"><div class="ico">${I.phone}</div><h3>Resident app</h3><div class="small muted">Register codes, top up for COD, show the pickup QR.</div></div></a>
+    <a class="role" href="#door"><div class="card"><div class="ico">${I.door}</div><h3>Door panel</h3><div class="small muted">Courier drop-off and resident pickup, with the bay LEDs and scales.</div></div></a>
+    <a class="role" href="#office"><div class="card"><div class="ico">${I.office}</div><h3>Juristic office</h3><div class="small muted">Alerts, bay occupancy, parcels and the activity log.</div></div></a>
+  </div>
+  <div class="flow">
+    <div class="card"><b>1 · Registration</b><ol><li>Resident orders online and gets a tracking code</li><li>Registers it in the app</li><li>For COD, tops up the wallet</li></ol></div>
+    <div class="card"><b>2 · Courier drop-off</b><ol><li>Weighs the parcel and scans the label at the door</li><li>Unregistered code or COD not covered: door stays locked</li><li>LED shows the bay; the bay scale confirms the weight</li><li>Mismatch: room locks and the office is alerted</li><li>COD payout and digital proof of delivery</li></ol></div>
+    <div class="card"><b>3 · Resident pickup</b><ol><li>Resident gets a one-time QR</li><li>Scans it at the door; their bays light up</li><li>Bay scales check each parcel taken</li><li>Wrong parcel: alarm and office alert</li><li>After ${FREE_DAYS} days, an overtime fee of ${baht(FEE_PER_DAY)}/day</li></ol></div>
+  </div>
+  <div class="scope">
+    <div class="card"><b>What works in this prototype</b><ul><li>All three flows end to end, as in the proposal</li><li>Bay assignment that spreads similar weights across bays</li><li>Weight checks at drop-off and pickup (±5%, min 30 g)</li><li>COD wallet, payout and proof of delivery</li><li>Office alerts, overtime fees and a timestamped CSV log</li></ul></div>
+    <div class="card"><b>What is simulated</b><ul><li>Smart lock, LED strips, scales and cameras appear on screen; there's no hardware</li><li>QR scanning and label scanning are buttons or typed codes</li><li>No real payments or logins; demo rooms only</li><li>Data stays in this browser only (no server). Open views in tabs on the same device</li><li>Not included: return drop-off, computer vision, ads and partners</li></ul></div>
+  </div></div>`;
+}
+function demoView(){
+  const open=S.alerts.filter(a=>!a.resolved);
+  return `<div class="split"><div><div class="split-label">Resident's phone</div>${residentView()}</div>
+    <div><div class="split-label">ParceLock door panel</div>${doorView()}
+    <div class="card mini-alerts"><div class="sec-h"><h3>Juristic office alerts</h3><a href="#office" class="small">Open dashboard →</a></div>
+    ${open.length?open.slice().reverse().map(alertCard).join(''):'<div class="small muted">No open alerts.</div>'}</div></div></div>`;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const v=UI.view;
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));
+  let h='';
+  if(v==='resident')h=`<div class="view-pad">${residentView()}</div>`;
+  else if(v==='door')h=`<div class="view-pad">${doorView()}<div class="card mini-alerts"><div class="sec-h"><h3>Juristic office alerts</h3><a href="#office" class="small">Open dashboard →</a></div>${S.alerts.filter(a=>!a.resolved).slice().reverse().map(alertCard).join('')||'<div class="small muted">No open alerts.</div>'}</div></div>`;
+  else if(v==='office')h=officeView();
+  else if(v==='demo')h=demoView();
+  else h=overviewView();
+  const ph=document.querySelector('.ph-body'),sc=ph?ph.scrollTop:0;
+  $('#app').innerHTML=h;
+  const ph2=document.querySelector('.ph-body');if(ph2)ph2.scrollTop=sc;
+}
+function route(){const h=(location.hash||'').replace('#','');UI.view=['overview','demo','resident','door','office'].includes(h)?h:'overview';render();window.scrollTo(0,0);}
+window.addEventListener('hashchange',route);
+
+/* ================= ACTIONS ================= */
+function commit(){save();render();}
+function resetDoorMsgs(){UI.dErr=null;UI.dInfo=null;}
+const A={
+  rtab(ds){UI.rtab=ds.k;UI.regMsg=null;UI.walletMsg=null;render();},
+  topup(ds){const a=+ds.a;S.wallets[UI.room]=(S.wallets[UI.room]||0)+a;S.tx.push({t:Date.now(),room:UI.room,amount:a,desc:'Top-up'});
+    log('Room '+UI.room,'wallet_topup',baht(a));UI.walletMsg=`Added ${baht(a)} to your wallet.`;commit();},
+  phoneScan(){const pass=S.passes[UI.room];if(!pass)return;
+    if(S.door.mode!=='idle'&&!(S.door.mode==='pickup'&&S.door.step==='scan')){toast('The door is busy with another user. Finish or cancel it first.');return;}
+    resetDoorMsgs();pickupUnlock(pass.code);if(UI.view==='resident')toast('Door unlocked. Open the Door panel or Side-by-side view.');},
+  dStart(ds){resetDoorMsgs();if(ds.m==='courier')S.door={mode:'courier',step:'scan',items:[],current:null,unlocked:false,startedAt:Date.now(),courier:'Courier #'+rnd(100,999)};
+    else S.door={mode:'pickup',step:'scan',items:[],taken:[],startedAt:Date.now()};
+    log(ds.m==='courier'?S.door.courier:'resident',ds.m==='courier'?'courier_session_start':'pickup_session_start','At door');commit();},
+  dCancel(){const m=S.door.mode;S.door={mode:'idle'};resetDoorMsgs();log('door',m+'_cancelled','');commit();},
+  dDone(){S.door={mode:'idle'};resetDoorMsgs();commit();},
+  cFill(ds){const p=P(ds.id);$('#c-track').value=p.tracking;$('#c-w').value=p.weight+rnd(-8,8);},
+  cFillUnreg(){$('#c-track').value='FLA'+rnd(100000000,999999999);$('#c-w').value=rnd(300,2500);},
+  cPlace(){const d=S.door,c=d.current,p=P(c.id);
+    p.status='stored';p.bay=c.bay;p.weight=c.w;p.storedAt=now();ensurePass(p.room);
+    d.items.push({id:p.id});d.current=null;d.step='next';
+    log(d.courier,'parcel_stored',`${p.tracking} → Room ${p.room}, Bay ${p.bay}, ${g(p.weight)} (bay scale matched)`);
+    notify(p.room,`Your ${p.carrier} parcel …${p.tracking.slice(-4)} has arrived in Bay ${p.bay}. Show your pickup QR at the door.`);
+    if(p.cod){S.wallets[p.room]-=p.cod;p.codPaid=true;S.tx.push({t:Date.now(),room:p.room,amount:-p.cod,desc:`COD …${p.tracking.slice(-4)} (${p.carrier})`});
+      notify(p.room,`COD ${baht(p.cod)} for …${p.tracking.slice(-4)} was paid from your wallet.`);log('system','cod_charged',`Room ${p.room} wallet −${baht(p.cod)}`);}
+    commit();},
+  cWrongBay(){const d=S.door,c=d.current,p=P(c.id);const wrong=BAYS.filter(b=>b!==c.bay)[rnd(0,2)];
+    const a=alertOffice('dropoff_mismatch',`Courier placed …${p.tracking.slice(-4)} (Room ${p.room}, ${g(c.w)}) in Bay ${wrong} instead of Bay ${c.bay}. Bay ${c.bay} scale: +0 g, Bay ${wrong} scale: +${g(c.w)}.`,{bay:wrong,parcelId:p.id,expBay:c.bay,w:c.w});
+    S.door.lockAlert=a.id;log(d.courier,'dropoff_mismatch',`${p.tracking} expected Bay ${c.bay}, detected Bay ${wrong}. Room locked`);commit();},
+  cAnother(){resetDoorMsgs();S.door.step='scan';commit();},
+  cFinish(){const d=S.door;const placed=d.items.map(x=>P(x.id));if(!placed.length){S.door={mode:'idle'};commit();return;}
+    d.unlocked=false;d.step=placed.some(p=>p.cod)?'cod':'pod';if(d.step==='pod')issuePod();commit();},
+  cPayout(){const d=S.door;const placed=d.items.map(x=>P(x.id));const tot=placed.reduce((a,p)=>a+(p.cod||0),0);
+    log(d.courier,'cod_payout',`${baht(tot)} paid to courier at payment unit`);d.step='pod';issuePod();commit();},
+  pFill(ds){$('#p-code').value=S.passes[ds.r].code;},
+  pFillBad(){$('#p-code').value=String(rnd(100000,999999));},
+  pTake(ds){const d=S.door,p=P(ds.id);removal(p,{bay:p.bay,grams:p.weight+rnd(-6,6)});},
+  pWrong(ds){const d=S.door,p=P(ds.id);
+    let others=S.parcels.filter(x=>x.status==='stored'&&x.room!==d.room);
+    const same=others.filter(x=>x.bay===p.bay);const o=(same.length?same:others)[0];
+    const ev=o?{bay:o.bay,grams:o.weight,other:o.id}:{bay:p.bay,grams:p.weight+700,other:null};
+    removal(p,ev);},
+  pReturn(){const d=S.door;log('Room '+d.room,'item_returned',`Item put back in Bay ${d.mismatch.bay}; scale back to normal`);d.mismatch=null;commit();},
+  pFinish(ds){const d=S.door;const items=d.items.map(P);const took=items.filter(p=>d.taken.includes(p.id));
+    took.forEach(p=>{const f=overtimeFee(p);
+      if(f){S.wallets[d.room]=(S.wallets[d.room]||0)-f;S.tx.push({t:Date.now(),room:d.room,amount:-f,desc:`Overtime storage fee …${p.tracking.slice(-4)}`});log('system','overtime_fee',`Room ${d.room} −${baht(f)} for ${p.tracking} (${storageDays(p)} days stored)`);}
+      p.status='collected';p.collectedAt=now();p.bay=null;});
+    const secs=Math.round((Date.now()-d.startedAt)/1000);
+    log('Room '+d.room,'pickup_complete',`${took.length} parcel(s) collected in ${secs}s${ds.partial?`, ${items.length-took.length} left for later`:''}`);
+    if(!S.parcels.some(p=>p.room===d.room&&p.status==='stored'))delete S.passes[d.room];
+    else S.passes[d.room]={code:newCode(),createdAt:Date.now()};
+    notify(d.room,`You collected ${took.length} parcel${took.length>1?'s':''}. Your pickup QR has been used.`);
+    UI.dInfo=`Room ${esc(d.room)}: ${took.length} parcel${took.length>1?'s':''} collected. Door locked.`;S.door={mode:'idle'};commit();},
+  resolve(ds){const a=S.alerts.find(x=>x.id===ds.id);if(!a)return;a.resolved=true;a.resolvedAt=Date.now();
+    if(a.type==='dropoff_mismatch'){const p=P(a.parcelId);const d=S.door;
+      a.note=`Officer moved parcel to Bay ${a.expBay}`;
+      if(d.mode==='courier'&&d.current&&d.current.id===a.parcelId){S.door.lockAlert=null;log('Officer','alert_resolved',a.note+'; door unlocked');A.cPlace();return;}
+      S.door.lockAlert=null;}
+    else a.note='Checked by officer';
+    log('Officer','alert_resolved',a.note);commit();},
+  dayPlus(){S.dayOffset++;log('demo','clock_advanced',`+${S.dayOffset} day(s)`);commit();},
+  resetAsk(){UI.confirmReset=true;render();},
+  resetNo(){UI.confirmReset=false;render();},
+  reset(){S=seed();UI.confirmReset=false;resetDoorMsgs();UI.regMsg=null;UI.walletMsg=null;commit();toast('Demo data reset');},
+  csvCopy(){const c=csv();try{navigator.clipboard.writeText(c).then(()=>toast('CSV copied'),()=>toast('Copy blocked by the browser'));}catch(e){toast('Copy blocked by the browser');}},
+  csvDl(){try{const b=new Blob([csv()],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='parcelock-log.csv';document.body.appendChild(a);a.click();a.remove();toast('Download started (use Copy CSV if nothing happens)');}catch(e){toast('Download blocked; use Copy CSV');}},
+};
+function csv(){const q=v=>'"'+String(v).replace(/"/g,'""')+'"';return ['time_iso,actor,event,detail'].concat(S.log.map(l=>[new Date(l.t).toISOString(),l.actor,l.event,l.detail].map(q).join(','))).join('\n');}
+function issuePod(){const d=S.door;const placed=d.items.map(x=>P(x.id));
+  const pod={id:'POD-'+new Date().toISOString().slice(2,10).replace(/-/g,'')+'-'+rnd(1000,9999),t:Date.now(),courier:d.courier,
+    items:placed.map(p=>({tracking:p.tracking,room:p.room,bay:p.bay,weight:p.weight,cod:p.cod})),cod:placed.reduce((a,p)=>a+(p.cod||0),0)};
+  S.pods.push(pod);const secs=Math.round((Date.now()-d.startedAt)/1000);
+  log(d.courier,'delivery_complete',`${pod.id}: ${placed.length} parcel(s) in ${secs}s, door locked`);}
+function removal(p,ev){
+  const d=S.door,t=tol(p.weight);
+  const ok=ev.bay===p.bay&&Math.abs(ev.grams-p.weight)<=t;
+  if(ok){d.taken.push(p.id);log('Room '+d.room,'parcel_taken',`${p.tracking} from Bay ${p.bay}: −${g(ev.grams)} (expected ${g(p.weight)} ±${t} g) ✓`);}
+  else{d.mismatch={bay:ev.bay,grams:ev.grams,expected:p.weight,expBay:p.bay};
+    const o=ev.other?P(ev.other):null;
+    alertOffice('pickup_mismatch',`Room ${d.room} removed ${g(ev.grams)} from Bay ${ev.bay}; expected ${g(p.weight)} from Bay ${p.bay}${o?` (looks like Room ${o.room}'s parcel …${o.tracking.slice(-4)})`:''}. Resident asked to return it.`,{bay:ev.bay});
+    log('Room '+d.room,'pickup_mismatch',`Bay ${ev.bay} −${g(ev.grams)}, expected Bay ${p.bay} −${g(p.weight)}`);}
+  commit();
+}
+function pickupUnlock(code){
+  const room=roomByCode(code);
+  const items=room?S.parcels.filter(p=>p.room===room&&p.status==='stored'):[];
+  if(!room||!items.length){UI.dErr='This code is not valid or has already been used. Door stays locked.';
+    if(S.door.mode!=='pickup')S.door={mode:'pickup',step:'scan',items:[],taken:[],startedAt:Date.now()};
+    log('door','pickup_rejected',`Invalid code ${code}`);commit();return;}
+  if(S.door.mode!=='pickup')S.door={mode:'pickup',step:'scan',items:[],taken:[],startedAt:Date.now()};
+  Object.assign(S.door,{step:'collect',room,items:items.map(p=>p.id),taken:[],mismatch:null});
+  UI.dErr=null;log('Room '+room,'pickup_unlocked',`QR accepted, ${items.length} parcel(s) in Bay ${[...new Set(items.map(p=>p.bay))].sort().join(', ')}`);commit();
+}
+const FORMS={
+  register(){
+    const tr=$('#r-track').value.trim().toUpperCase(),car=$('#r-carrier').value,size=$('#r-size').value,cod=$('#r-cod').checked,amt=Math.round(+$('#r-codamt').value||0);
+    if(!/^[A-Z0-9]{8,20}$/.test(tr)){UI.regMsg={k:'bad',html:'Tracking code should be 8–20 letters or numbers.'};render();return;}
+    if(S.parcels.some(p=>p.tracking===tr)){UI.regMsg={k:'bad',html:'This tracking code is already registered.'};render();return;}
+    if(cod&&amt<=0){UI.regMsg={k:'bad',html:'Enter the COD amount.'};render();return;}
+    const [a,b]=SIZES[size];
+    S.parcels.push({id:'p'+(S.seq++),tracking:tr,carrier:car,room:UI.room,size,weight:rnd(a,b),cod:cod?amt:0,codPaid:false,status:'awaiting',bay:null,registeredAt:now(),storedAt:null,collectedAt:null});
+    log('Room '+UI.room,'parcel_registered',`${tr} (${car})${cod?`, COD ${baht(amt)}`:''}`);
+    const bal=S.wallets[UI.room]||0,pc=pendingCod(UI.room);
+    UI.regMsg=cod&&pc>bal?{k:'warn',html:`Registered. Your wallet (${baht(bal)}) doesn't cover the COD due (${baht(pc)}). Top up before it arrives.`}:{k:'ok',html:`Registered <span class="mono">${esc(tr)}</span>. We'll notify you when it's in the parcel room.`};
+    commit();},
+  cscan(){
+    const tr=$('#c-track').value.trim().toUpperCase(),w=Math.round(+$('#c-w').value||0),d=S.door;
+    if(w<=0){UI.dErr='Put the parcel on the entrance scale first.';render();return;}
+    const p=S.parcels.find(x=>x.tracking===tr);
+    if(!p){UI.dErr=`<b>${esc(tr)}</b> is not registered with any room. The door stays locked. Please contact the juristic office or return the parcel to the hub.`;
+      alertOffice('unregistered',`Courier tried to deliver unregistered parcel ${tr} (${g(w)}). Door kept locked.`);log(d.courier,'rejected_unregistered',tr);commit();return;}
+    if(p.status!=='awaiting'||d.items.some(x=>x.id===p.id)){UI.dErr=`<b>${esc(tr)}</b> has already been delivered.`;render();return;}
+    if(p.cod){const bal=S.wallets[p.room]||0; // earlier COD parcels in this visit were already charged at placement
+      if(bal<p.cod){UI.dErr=`COD ${baht(p.cod)} for Room ${esc(p.room)} is not covered (wallet ${baht(bal)}). The door stays locked and the resident has been asked to top up.`;
+        notify(p.room,`A courier tried to deliver COD parcel …${p.tracking.slice(-4)} (${baht(p.cod)}) but your wallet has ${baht(bal)}. Top up so it can be delivered.`,'warn');
+        alertOffice('cod_balance',`COD parcel ${p.tracking} for Room ${p.room} (${baht(p.cod)}) refused: wallet ${baht(bal)}.`);
+        log(d.courier,'rejected_cod_balance',`${p.tracking} Room ${p.room} needs ${baht(p.cod)}, wallet ${baht(bal)}`);commit();return;}}
+    const bay=assignBay(w,[]);
+    d.current={id:p.id,bay,w};d.step='place';d.unlocked=true;UI.dErr=null;
+    log(d.courier,'label_scanned',`${tr} (Room ${p.room}, ${g(w)}) accepted, door unlocked, assigned Bay ${bay}`);commit();},
+  pscan(){const code=$('#p-code').value.replace(/\D/g,'');pickupUnlock(code);},
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;e.preventDefault();const f=A[b.dataset.act];if(f)f(b.dataset,b);});
+document.addEventListener('submit',e=>{const f=e.target.dataset.form;if(!f)return;e.preventDefault();FORMS[f]();});
+document.addEventListener('change',e=>{const c=e.target.dataset.change;if(c==='room'){UI.room=e.target.value;UI.regMsg=null;UI.walletMsg=null;render();}
+  if(c==='codtoggle'){$('#r-cod-wrap').classList.toggle('hide',!e.target.checked);}});
+route();
+})();
+</script>
+</body>
+</html>
